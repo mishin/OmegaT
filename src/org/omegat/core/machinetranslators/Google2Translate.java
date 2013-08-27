@@ -37,6 +37,12 @@ import org.omegat.util.PatternConsts;
 import org.omegat.util.Preferences;
 import org.omegat.util.WikiGet;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+
 /**
  * Support of Google Translate API v.2 machine translation.
  * https://code.google.com/apis/language/translate/v2/getting_started.html
@@ -44,6 +50,7 @@ import org.omegat.util.WikiGet;
  * @author Alex Buloichik (alex73mail@gmail.com)
  * @author Didier Briel
  * @author Briac Pilpre
+ * @author Nikolay Mishin (mi@ya.ru)
  */
 public class Google2Translate extends BaseTranslate {
     protected static final String  GT_URL   = "https://www.googleapis.com/language/translate/v2";
