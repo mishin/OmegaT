@@ -164,7 +164,7 @@
         public static String perl_translate (Language sLang, Language tLang, String text) {
             String trText = text.length() > 5000 ? text.substring(0, 4997) + "..." : text;
             String perl_command=OStrings.getString("GOOGLE_PATH_TO_PERL")+" "+OStrings.getString("GOOGLE_PATH_TO_SCRIPT")+
-                    " --to " + tLang.getLanguageCode()+ " --from " + sLang.getLanguageCode() + " \"" + trText+ "\"";
+                    " --to " + tLang.getLanguageCode()+ " --from " + sLang.getLanguageCode() + " --text \"" + trText+ "\"";
 
     String Out="";
             Runtime r = Runtime.getRuntime();

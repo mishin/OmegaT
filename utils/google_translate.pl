@@ -1,165 +1,109 @@
-#!/usr/bin/perl
-# By: Jeremiah LaRocco
+#!/usr/bin/env perl
+# By: Jeremiah LaRocco, Nikolay Mishin (refactoring)
 # Use translate.google.com to translate between languages.
 # Sample run:
-# gtrans.pl --to french --from english This is a test
-# Ceci est un test
-#
-# use encoding 'cp1251';
-# use encoding 'utf8';
-# use utf8;
-# use open OUT => ':utf8';
-# use open ':utf8'; 
-# use strict; 
-# use utf8; use open qw(:std :utf8);
-# binmode(STDOUT, ":encoding(utf8)");
+#google_translate.pl --from en --to ru --text "This is a test"
+
 use Modern::Perl;
-use strict;
-use warnings;
-require LWP::UserAgent;
-use Getopt::Long qw(:config pass_through);
+use LWP::UserAgent;
 use URI::Escape;
 use HTML::Entities;
 use Encode;
-
-
-# use open qw/:std :utf8/;
-
-# use Encode 'from_to';
+use DDP;
 use Convert::Cyrillic;
-   
-   # $utf8_text = from_to($koi8_text, "koi8-r", "utf8");
 
-my %languages = (
-    'french'               => 'fr',
-    'spanish'              => 'es',
-    'afrikaans'            => 'af',
-    'albanian'             => 'sq',
-    'arabic'               => 'ar',
-    'belarusian'           => 'be',
-    'bulgarian'            => 'bg',
-    'catalan'              => 'ca',
-    'chinese'              => 'zh-cn',
-    'croatian'             => 'hr',
-    'czech'                => 'cs',
-    'danish'               => 'da',
-    'dutch'                => 'nl',
-    'english'              => 'en',
-    'estonian'             => 'et',
-    'filipino'             => 'tl',
-    'finnish'              => 'fi',
-    'french'               => 'fr',
-    'galician'             => 'gl',
-    'german'               => 'de',
-    'greek'                => 'el',
-    'haitian creole alpha' => 'ht',
-    'hebrew'               => 'iw',
-    'hindi'                => 'hi',
-    'hungarian'            => 'hu',
-    'icelandic'            => 'is',
-    'indonesian'           => 'id',
-    'irish'                => 'ga',
-    'italian'              => 'it',
-    'japanese'             => 'ja',
-    'korean'               => 'ko',
-    'latvian'              => 'lv',
-    'lithuanian'           => 'lt',
-    'macedonian'           => 'mk',
-    'malay'                => 'ms',
-    'maltese'              => 'mt',
-    'norwegian'            => 'no',
-    'persian'              => 'fa',
-    'polish'               => 'pl',
-    'portuguese'           => 'pt',
-    'romanian'             => 'ro',
-    'russian'              => 'ru',
-    'serbian'              => 'sr',
-    'slovak'               => 'sk',
-    'slovenian'            => 'sl',
-    'spanish'              => 'es',
-    'swahili'              => 'sw',
-    'swedish'              => 'sv',
-    'thai'                 => 'th',
-    'turkish'              => 'tr',
-    'ukrainian'            => 'uk',
-    'vietnamese'           => 'vi',
-    'welsh'                => 'cy',
-    'yiddish'              => 'yi',
-);
+use Getopt::Long;
+use Pod::Usage;
 
-sub usage {
-    my $usage_str = <<END;
-Valid command line arguments are:
-   $0  [--to <language>] [--from <language>] text...
-Optional arguments controlling translation languages:
-   --to     Sets the language to translate to
-The default value is English (en)
-   --from   Sets the language to translate from
-The default value is French (fr)
-Languages can be specified by name (i.e. French) or by their abbreviation (i.e. fr).
-Valid languages are:
-END
-    print $usage_str;
-    my $curLine = '';
+my $man  = 0;
+my $help = 0;
+my $from = 'en';
+my $to   = 'ru';
+my $text = 'yapc';
 
-    for my $key ( sort keys %languages ) {
-        $curLine = sprintf( '%s %20s %7s  ',
-            $curLine, $key, '(' . $languages{$key} . ')' );
-        if ( length($curLine) > 100 ) {
-            print "$curLine\n";
-            $curLine = '';
-        }
-    }
-    print "$curLine\n";
-}
+GetOptions(
+    'help|?' => \$help,
+    'man'    => \$man,
+    'from=s' => \$from,
+    'to=s'   => \$to,
+    'text=s' => \$text
+) or pod2usage( -verbose => 2 );
+
+pod2usage(1) if $help;
+pod2usage( -verbose => 2 ) if $man;
+
+&main;
+exit;
 
 sub main {
-    my $help;
-    my $to   = 'ru';
-    my $from = 'en';
+    translate_text( $from, $to, $text );
+}
 
-    GetOptions(
-        'help!'  => \$help,
-        'to=s'   => \$to,
-        'from=s' => \$from
-    );
-    if ( $help || $#ARGV == -1 ) {
-        usage;
-        exit(0);
-    }
-    if ( $languages{ lc $from } ) {
-        $from = $languages{ lc $from };
-    }
-    if ( $languages{ lc $to } ) {
-        $to = $languages{ lc $to };
-    }
-    my @words = @ARGV;
-    map uri_escape, @words;
-	
-    my $url = "http://translate.google.com/translate_t?langpair=$from|$to&text="
-      . join( '+', @words );
+sub translate_text {
+    my ( $from, $to, $words ) = @_;
+
+    my $url =
+        'http://translate.google.com/translate_t?langpair='
+      . $from . '|'
+      . $to
+      . '&text=' . '+'
+      . $words;
     my $ua = LWP::UserAgent->new;
     $ua->agent('');
     my $res = $ua->get($url);
-    if ( $res->is_success ) {
-        my $sentence = join( ' ', @words );
+    die $res->status_line if $res->is_error;
+    my $html = $res->content;
+    my @matches =
+      $html =~ m{onmouseout="this.style.backgroundColor='#fff'">(.*?)</span>}g;
 
-        # my $translated = decode_entities($res->content);
-        if ( $res->content =~
-/<span title="$sentence" onmouseover="this.style.backgroundColor='#ebeff9'" onmouseout="this.style.backgroundColor='#fff'">(.*?)<\/span>/
-          )
-        {
-		    # say $1;
-            my $translated = decode_entities($1);
-			
-			my $interm_var=Convert::Cyrillic::cstocs('KOI8', 'UTF8', $translated);
-			my $rez=Encode::from_to($interm_var, 'utf-8', 'cp1251'); # or whatever 
-			say $interm_var;
-		
-        }
-    }
-    else {
-        die $res->status_line;
+    foreach my $translated_string (@matches) {
+        my $interm_var =
+          Convert::Cyrillic::cstocs( 'KOI8', 'UTF8', $translated_string );
+        Encode::from_to( $interm_var, 'utf-8', 'cp1251' );
+        say $interm_var;
     }
 }
-main;
+
+__END__
+
+=head1 NAME
+
+google_translate.pl - Translate using  translate.google.com
+
+=head1 SYNOPSIS
+
+google_translate.pl --from en --to ru --text "This is a test"
+google_translate.pl [options] [text to translate ...]
+
+Options:
+-help brief help message
+-man full documentation
+-from from language
+-to to language
+-text text to translate
+
+=head1 OPTIONS
+
+=over 2
+
+=item B<-help>
+
+Print a brief help message and exits.
+
+=item B<-man>
+
+Prints the manual page and exits.
+
+=back
+
+=head1 DESCRIPTION
+
+B<This program> will read the given input "text" and translate it to 
+ selected language using translate.google.com.
+
+=head1 AUTHOR
+
+Jeremiah LaRocco, Nikolay Mishin(mi@ya.ru) (refactoring)
+
+
+=cut

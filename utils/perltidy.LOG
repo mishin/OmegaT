@@ -1,0 +1,29 @@
+perltidy version 20121207 log file on a MSWin32 system, OLD_PERL_VERSION=5.014002
+Windows type is XP/.Net
+Configuration and command line parameters for this run:
+-nse -nst
+To find error messages search for 'WARNING' with your editor
+Indentation will be with 4 spaces
+Line 1 implies starting-indentation-level = 0
+The nesting depths in the table below are at the start of the lines.
+The indicated output line numbers are not always exact.
+ci = levels of continuation indentation; bk = 1 if in BLOCK, 0 if not.
+
+in:out indent c b  nesting   code + messages; (messages begin with >>>)
+lines  levels i k            (code begins with one '.' per indent level)
+------  ----- - - --------   -------------------------------------------
+L38:38   i0:0 0 1            sub main {
+L43:42   i0:0 0 1            sub translate_text {
+L44:43   i2:1 0 1 {          >>>Start indentation disagreement: input=2; output=1
+L46:45   i1:1 0 1 {          >>>End indentation disagreement from input line 44
+L66:64   i0:0 0 1 {          >>>Starting __END__ section
+L66:64   i0:0 0 1 {          >>>Entering POD section
+L66:64   i0:0 0 1 {          >>>Exiting POD section
+First indentation disagreement seen at input line 44
+Last indentation disagreement seen at input line 44
+Note: Indentation disagreement detection is not accurate for outdenting and -lp.
+
+No lines exceeded 80 characters
+  Maximum output line length was 79 at line 57
+Suggest including 'use warnings;'
+Suggest including 'use strict;'
